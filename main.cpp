@@ -39,8 +39,8 @@ bool cmdOptionExists(char** begin, char** end, const std::string& option)
 }
 int main(int argc, char** argv) {
     string fileAdd="/media/anonymous/2TB/data/Twitter/small/";
-//    string fileAdd="/media/u1880698/2TB/data/exactJoin/tpch/";
-//    string fileAdd="/media/u1880698/2TB/data/exactJoin/tpcds/small/";
+//    string fileAdd="/media/2TB/data/exactJoin/tpch/";
+//    string fileAdd="/media/2TB/data/exactJoin/tpcds/small/";
     string outAdd="/media/anonymous/2TB/data/";
     if(cmdOptionExists(argv, argv+argc, "--help"))
     {
