@@ -6,7 +6,7 @@
 
 /* 
  * File:   queries.h
- * Author: u1880698
+ * Author: anonymous
  *
  * Created on 18 June 2020, 08:35
  */
@@ -27,7 +27,7 @@ typedef struct // Q3 of tpch
     vector<unsigned int> sample_sizes={ 1000}; // timing points in generating a sample. the last number is the actual sample size
 //    static const string query="SELECT c_custkey, o_orderkey, l_linenumber FROM customer, orders, lineitem WHERE c_custkey = o_custkey AND l_orderkey = o_orderkey;";
     //tables and addresses
-    unordered_map<string,string> tables={{"customer","/home/shan/newdata/tpch10x/customer.csv"},{"orders","/home/shan/newdata/tpch10x/orders.csv"},{"lineitem","/home/shan/newdata/tpch10x/lineitem.csv"}};
+    unordered_map<string,string> tables={{"customer","/home/newdata/tpch10x/customer.csv"},{"orders","/home/newdata/tpch10x/orders.csv"},{"lineitem","/home/newdata/tpch10x/lineitem.csv"}};
     //tables and aliases
     unordered_map<string,vector<string>> tableAliases={{"customer",{"c"}},{"orders", {"o"}},{"lineitem", {"l"}}};
     //tables and primary keys

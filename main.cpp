@@ -1,7 +1,7 @@
 
 /* 
  * File:   main.cpp
- * Author: u1880698
+ * Author: anonymous
  *
  * Created on 16 June 2020, 15:21
  */
@@ -38,10 +38,10 @@ bool cmdOptionExists(char** begin, char** end, const std::string& option)
     return std::find(begin, end, option) != end;
 }
 int main(int argc, char** argv) {
-    string fileAdd="/media/u1880698/2TB/data/Twitter/small/";
+    string fileAdd="/media/anonymous/2TB/data/Twitter/small/";
 //    string fileAdd="/media/u1880698/2TB/data/exactJoin/tpch/";
 //    string fileAdd="/media/u1880698/2TB/data/exactJoin/tpcds/small/";
-    string outAdd="/media/u1880698/2TB/data/";
+    string outAdd="/media/anonymous/2TB/data/";
     if(cmdOptionExists(argv, argv+argc, "--help"))
     {
         cout<<"-input \t\t the address for the tables: Note, the tables should be in .csv format separating the attributes by '|' and should include the headers \n"<<endl;

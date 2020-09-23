@@ -6,7 +6,7 @@
 
 /* 
  * File:   PGM.h
- * Author: u1880698
+ * Author: anonymous
  *
  * Created on 20 June 2020, 09:16
  */

@@ -1,7 +1,7 @@
 
 /* 
  * File:   myGraph.h
- * Author: u1880698
+ * Author: anonymous
  *
  * Created on 16 June 2020, 15:44
  */
