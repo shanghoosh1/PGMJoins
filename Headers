@@ -1,0 +1,28 @@
+TPC-H headers
+
+CUSTOMER.CSV: custkey|name|address|nationkey|phone|acctball|mktsegment|comment
+LINEITEM.CSV: orderkey|partkey|suppkey|linenumber|quantity|extendedprice|discount|tax|returnflag|linestatus|shipdate|commitdate|receiptdate|shipinstruct|shipmode|comment
+NATION.CSV: nationkey|name|regionkey|comment
+ORDERS.CSV: orderkey|custkey|orderstatus|totalprice|orderdate|order-priority|clerk|ship-priority|comment
+PART.CSV: partkey|name|mfgr|brand|type|size|container|retailprice|comment
+PARTSUPP.CSV: partkey|suppkey|availqty|supplycost|comment
+REGION.CSV regionkey|name|comment
+SUPPLIER.CSV: suppkey|name|address|nationkey|phone|acctball|comment
+----------------------------------------------------------------------------------------------------------------
+TPC-DS headers
+
+CATALOG_RETURNS.CSV: returned_date_sk|returned_time_sk|item_sk|refunded_customer_sk|refunded_cdemo_sk|refunded_hdemo_sk|refunded_addr_sk|returning_customer_sk|returning_cdemo_sk|returning_hdemo_sk|returning_addr_sk|call_center_sk|catalog_page_sk|ship_mode_sk|warehouse_sk|reason_sk|order_number|return_quantity|return_amount|return_tax|return_amt_inc_tax|fee|return_ship_cost|refunded_cash|reversed_charge|store_credit|net_loss
+
+CATALOG_SALES: sold_date_sk|sold_time_sk|ship_date_sk|bill_customer_sk|bill_cdemo_sk|bill_hdemo_sk|bill_addr_sk|ship_customer_sk|ship_cdemo_sk|ship_hdemo_sk|ship_addr_sk|call_center_sk|catalog_page_sk|ship_mode_sk|warehouse_sk|item_sk|promo_sk|order_number|quantity|wholesale_cost|list_price|sales_price|ext_discount_amt|ext_sales_price|ext_wholesale_cost|ext_list_price|ext_tax|coupon_amt|ext_ship_cost|net_paid|net_paid_inc_tax|net_paid_inc_ship|net_paid_inc_ship_tax|net_profit
+
+STORE_RETURNS.CSV: returned_date_sk|return_time_sk|item_sk|customer_sk|cdemo_sk|hdemo_sk|addr_sk|store_sk|reason_sk|ticket_number|return_quantity|return_amt|return_tax|return_amt_inc_tax|fee|return_ship_cost|refunded_cash|reversed_charge|store_credit|net_loss
+
+STORE_SALES: sold_date_sk|sold_time_sk|item_sk|customer_sk|cdemo_sk|hdemo_sk|addr_sk|store_sk|promo_sk|ticket_number|quantity|wholesale_cost|list_price|sales_price|ext_discount_amt|ext_sales_price|ext_wholesale_cost|ext_list_price|ext_tax|coupon_amt|net_paid|net_paid_inc_tax|net_profit
+
+WEB_RETURNS.CSV: returned_date_sk|returned_time_sk|item_sk|refunded_customer_sk|refunded_cdemo_sk|refunded_hdemo_sk|refunded_addr_sk|returning_customer_sk|returning_cdemo_sk|returning_hdemo_sk|returning_addr_sk|web_page_sk|reason_sk|order_number|return_quantity|return_amt|return_tax|return_amt_inc_tax|fee|return_ship_cost|refunded_cash|reversed_charge|account_credit|net_loss
+
+WEB_SALES: sold_date_sk|sold_time_sk|ship_date_sk|item_sk|bill_customer_sk|bill_cdemo_sk|bill_hdemo_sk|bill_addr_sk|ship_customer_sk|ship_cdemo_sk|ship_hdemo_sk|ship_addr_sk|web_page_sk|web_site_sk|ship_mode_sk|warehouse_sk|promo_sk|order_number|quantity|wholesale_cost|list_price|sales_price|ext_discount_amt|ext_sales_price|ext_wholesale_cost|ext_list_price|ext_tax|coupon_amt|ext_ship_cost|net_paid|net_paid_inc_tax|net_paid_inc_ship|net_paid_inc_ship_tax|net_profit
+
+------------------------------------------------------------------------------------------------------------
+For all twitter data use dst|src
+
