@@ -46,15 +46,15 @@
             <pElem>.</pElem>
             <pElem>../../vcpkg/packages/jsoncpp_x64-linux/include</pElem>
             <pElem>../boost_1_73_0/PREFIX/include</pElem>
+            <pElem>third_party/boost</pElem>
+            <pElem>../../joinPGM/third_party/boost_1_73_0/PREFIX/include</pElem>
           </incDir>
         </ccTool>
         <linkerTool>
+          <output>${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/joinpgm</output>
           <linkerAddLib>
             <pElem>../boost_1_73_0/PREFIX/lib</pElem>
           </linkerAddLib>
-          <linkerLibItems>
-            <linkerLibFileItem>../../vcpkg/packages/jsoncpp_x64-linux/lib/libjsoncpp.a</linkerLibFileItem>
-          </linkerLibItems>
         </linkerTool>
       </compileType>
       <item path="Garbage" ex="false" tool="3" flavor2="0">

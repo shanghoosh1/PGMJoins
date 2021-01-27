@@ -28,7 +28,7 @@ typedef struct // Q3 of tpch
 //    static const string query="SELECT c_custkey, o_orderkey, l_linenumber FROM customer, orders, lineitem WHERE c_custkey = o_custkey AND l_orderkey = o_orderkey;";
     //tables and addresses
     unordered_map<string,string> tables={{"customer","/home/newdata/tpch10x/customer.csv"},{"orders","/home/newdata/tpch10x/orders.csv"},{"lineitem","/home/newdata/tpch10x/lineitem.csv"}};
-    //tables and aliases
+    //tables and aliases. Currently, you should give aliases to the tables
     unordered_map<string,vector<string>> tableAliases={{"customer",{"c"}},{"orders", {"o"}},{"lineitem", {"l"}}};
     //tables and primary keys
     unordered_map<string,string> PKs={{"c", "custkey"},{"o", "orderkey"},{"l", ""}};
@@ -46,6 +46,7 @@ typedef struct // Q3 of tpch
     string name="Q3";
     unordered_map<string,int> pulledoutAtt={}; //to make cyclic joins acyclic. this also shows the elimination order of the pulled out variables
     pair<string,string> pulledoutEdge;// for algorithm 1, removing the edge to make the query acyclic
+    unordered_map<string,int> sizes={};// to keep the sizes of the tables if available. if you have the sizes of the tables, insert below to make reading faster with buffer
 }Query;
 
 #endif /* QUERIES_H */

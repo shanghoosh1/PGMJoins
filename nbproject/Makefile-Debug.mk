@@ -52,13 +52,11 @@ FFLAGS=
 ASFLAGS=
 
 # Link Libraries and Options
-LDLIBSOPTIONS=-L../boost_1_73_0/PREFIX/lib ../../vcpkg/packages/jsoncpp_x64-linux/lib/libjsoncpp.a
+LDLIBSOPTIONS=-L../boost_1_73_0/PREFIX/lib
 
 # Build Targets
 .build-conf: ${BUILD_SUBPROJECTS}
 	"${MAKE}"  -f nbproject/Makefile-${CND_CONF}.mk ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/joinpgm
-
-${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/joinpgm: ../../vcpkg/packages/jsoncpp_x64-linux/lib/libjsoncpp.a
 
 ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/joinpgm: ${OBJECTFILES}
 	${MKDIR} -p ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}
@@ -67,7 +65,7 @@ ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/joinpgm: ${OBJECTFILES}
 ${OBJECTDIR}/main.o: main.cpp
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} "$@.d"
-	$(COMPILE.cc) -g -I. -I../../vcpkg/packages/jsoncpp_x64-linux/include -I../boost_1_73_0/PREFIX/include -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/main.o main.cpp
+	$(COMPILE.cc) -g -I. -I../../vcpkg/packages/jsoncpp_x64-linux/include -I../boost_1_73_0/PREFIX/include -Ithird_party/boost -I../../joinPGM/third_party/boost_1_73_0/PREFIX/include -MMD -MP -MF "$@.d" -o ${OBJECTDIR}/main.o main.cpp
 
 # Subprojects
 .build-subprojects:

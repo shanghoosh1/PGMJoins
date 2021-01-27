@@ -15,7 +15,7 @@
 #include <vector>
 #include<boost/functional/hash.hpp>
 #include <sampler.h>
-#include<csvReader.h>
+
 
 using namespace std;
 
@@ -32,9 +32,23 @@ using namespace std;
 //template < typename SEQUENCE, typename T >
 //using unordered_map_sequence = std::unordered_map< SEQUENCE, T, seq_hash<SEQUENCE> >; // this the data type for vector map
 
+template < typename SEQUENCE > struct seq_hash
+{
+	std::size_t operator() (const SEQUENCE& seq) const
+	{
+		std::size_t hash = 0;
+		boost::hash_range(hash, seq.begin(), seq.end());
+		return hash;
+	}
+};
+
+template < typename SEQUENCE, typename T >
+using unordered_map_sequence = std::unordered_map< SEQUENCE, T, seq_hash<SEQUENCE> >;
+
 typedef struct // defines a node type for skeleton variables
 {
     unordered_map<unsigned int,unsigned long int> pot;
+    vector<unordered_map<unsigned int,unsigned long int>> tmpPot; // to maintain the extra pots coming from different tables
 //    unordered_map<string, unordered_map<unsigned int,unsigned long int> > phi;
 //    unordered_map<unsigned int,unsigned long int> finalnodeMarginal;
     string name;

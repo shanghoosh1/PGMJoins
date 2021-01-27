@@ -17,39 +17,7 @@ using namespace std;
 #include <string>
 #include <algorithm>
 #include <sstream>
-
-
-template < typename SEQUENCE > struct seq_hash
-{
-	std::size_t operator() (const SEQUENCE& seq) const
-	{
-		std::size_t hash = 0;
-		boost::hash_range(hash, seq.begin(), seq.end());
-		return hash;
-	}
-};
-
-template < typename SEQUENCE, typename T >
-using unordered_map_sequence = std::unordered_map< SEQUENCE, T, seq_hash<SEQUENCE> >;
-
-
-
-
-class AttributeFrequencies
-{
-public:
-	std::vector<std::unordered_map<unsigned int, unordered_map<unsigned int, unsigned long int>>> ConditionalFreq;
-	std::unordered_map<string, std::unordered_map<unsigned int, unsigned long int>> SingleAttributesFreq;
-	unordered_map_sequence<vector<unsigned int>, unsigned int> GroupAttributesFreq;
-	unordered_map_sequence<std::vector<unsigned int>, vector<vector<unsigned int>> > GroupAttributesFreq2;
-	unordered_map<unsigned int, vector<vector<unsigned int>> > GroupAttributesFreq1;
-	unordered_map_sequence<vector<unsigned int>, unsigned int> pulledOutEdgeFreq;
-        unsigned long int dataSize;
-	std::map<std::string, double> timings;
-
-	AttributeFrequencies(std::vector<string>& singlAttributes);
-};
-
+#include<myGraph.h>
 
 class CSVReader
 {
@@ -62,10 +30,16 @@ public:
 		fileName(filename), delimeter(delm)
 	{ }
 	// Function to fetch data from a CSV File
+        std::vector<std::vector<unsigned int>> data;
 	std::vector<string> GetHeaders(std::vector<string>& singlAttributes, std::vector<std::pair<string, string>>& pairAttributes, vector<string>& First, vector<string>& Second);
 	std::vector<int> GetHeadersIndexes(const std::string& s, char delimiter, vector<string>& headers);
 	std::vector<unsigned int> split(const std::string& s, char delimiter);
-	AttributeFrequencies getData(std::vector<string>& singlAttributes, std::vector<std::pair<string, string>>& pairAttributes, vector<string>& First, vector<string>& Second);
+	void findRawData_withBuffer(std::vector<string>& singlAttributes, std::vector<std::pair<string, string>>& pairAttributes, vector<string>& First, vector<string>& Second, int size);
+        void findRawData(std::vector<string>& singlAttributes, std::vector<std::pair<string, string>>& pairAttributes, vector<string>& First, vector<string>& Second);
+        void calSingleFreq(string att,unordered_map<unsigned int,unsigned long int> &pot);
+        void calPairFreq(pair<string,string> atts,unordered_map<unsigned int, unordered_map<unsigned int, unsigned long int>> &pot);
+        void calNon_Sk_Freq(vector<string>& First, vector<string>& Second, unordered_map_sequence<std::vector<unsigned int>, vector<vector<unsigned int>> > & vec_Key,unordered_map<unsigned int, vector<vector<unsigned int>>> &single_key);
+        void calNon_Sk_Freq2(vector<string>& First, vector<string>& Second, unordered_map_sequence<std::vector<unsigned int>, vector<vector<unsigned int>> > & vec_Key,unordered_map<unsigned int, vector<vector<unsigned int>>> &single_key);
 };
 
 
@@ -89,128 +63,6 @@ std::pair<bool, int > findInVector(const std::vector<T>& vecOfElements, const T&
 }
 
 
-void
-TransferGroupAtt(std::vector<string>& First, std::vector<string>& Second, unordered_map_sequence<vector<unsigned int>, unsigned int>& GroupAttributesFreq, unordered_map_sequence<std::vector<unsigned int>, vector<vector<unsigned int>> >& GroupAttributesFreq2, unordered_map<unsigned int, vector<vector<unsigned int>> >& GroupAttributesFreq1)
-{
-
-	unsigned int sum = 0;
-	for (const auto& pair : GroupAttributesFreq)
-	{
-		if (First.size() == 1) {
-			vector<unsigned int> key;
-			key = pair.first;
-			int new_key = key[0];
-			vector<unsigned int> value;
-			for (int i = 0; i < Second.size(); i++) { unsigned int val; val = key[i + 1]; value.push_back(val); }
-
-			sum += pair.second;
-			value.push_back(sum);
-
-			GroupAttributesFreq1[new_key].push_back(value);
-		}
-		else {
-			vector<unsigned int> key;
-			vector<unsigned int> value;
-			for (int i = 0; i < First.size(); i++) {
-				string val;
-				//val = to_string(pair.first[i + 1]);
-				key.push_back(pair.first[i]);
-			}
-			for (int i = 0; i < Second.size(); i++) {
-				unsigned int val;
-				val = pair.first[First.size() + i];
-				value.push_back(val);
-			}
-			sum += pair.second;
-			value.push_back(sum);
-
-			GroupAttributesFreq2[key].push_back(value);
-		}
-
-	}
-}
-void
-FindGroupAttributes(std::vector<string>& concat, unordered_map_sequence<vector<unsigned int>, unsigned int>& GroupAttributesFreq, std::vector<string>& headers, std::vector<unsigned int>& values) {
-	// finding frequencies for Group attributes
-
-
-	vector<unsigned int> key_vector;
-
-	for (string att : concat) {
-		std::pair<bool, unsigned int> result = findInVector<string>(headers, att);
-		key_vector.push_back(values[result.second]);
-	}
-	try {
-		GroupAttributesFreq[key_vector] = GroupAttributesFreq[key_vector] + 1;
-	}
-	catch (...) {
-		GroupAttributesFreq[key_vector] = 1;
-	}
-
-}
-
-
-void
-FindPairAttributes(std::vector<std::pair<string, string>>& pairAttributes, std::vector<std::unordered_map<unsigned int, unordered_map<unsigned int, unsigned long int>>>& ConditionalFreq, std::vector<string>& headers, std::vector<unsigned int>& values) {
-	//finding conditional attributes
-	int cnt = -1;
-	for (std::pair<string, string> pair : pairAttributes) {
-		cnt += 1;
-		std::pair<bool, unsigned int> p1 = findInVector<string>(headers, pair.first);
-		std::pair<bool, unsigned int> p2 = findInVector<string>(headers, pair.second);
-		if (p1.first && p2.first)
-		{
-			unsigned int x_val, y_val;
-			x_val = values[p1.second];
-			y_val = values[p2.second];
-			if (ConditionalFreq.size() > 0) {
-				try {
-					ConditionalFreq[cnt][x_val][y_val] = ConditionalFreq[cnt][x_val][y_val] + 1;
-				}
-				catch (...) {
-					ConditionalFreq[cnt][x_val][y_val] = 1;
-				}
-			}
-			else {
-				std::unordered_map<unsigned int, unordered_map<unsigned int, unsigned long int>> temp;
-				temp[x_val][y_val] = 1;
-				ConditionalFreq.push_back(temp);
-			}
-
-		}
-		else
-			throw;
-	}
-
-
-}
-
-void
-FindSingleAttributes(std::vector<string>& singlAttributes, std::unordered_map<string, std::unordered_map<unsigned int, unsigned long int>>& SingleAttributesFreq, std::vector<string>& headers, std::vector<unsigned int>& values) {
-	// finding frequencies for single attributes 
-	for (string att : singlAttributes) {
-		std::pair<bool, unsigned int> result = findInVector<string>(headers, att);
-		if (result.first)
-		{
-			unsigned int val;
-			val = values[result.second];
-
-			try {
-
-				SingleAttributesFreq[att][val] = SingleAttributesFreq[att][val] + 1;
-			}
-			catch (...) {
-
-				SingleAttributesFreq[att][val] = 1;
-			}
-
-		}
-		else
-			throw;
-	}
-
-
-}
 string trim(const string& str)
 {
 	size_t first = str.find_first_not_of(' ');
@@ -252,16 +104,6 @@ string trim(const string& str)
 //	return 0;
 //}
 
-AttributeFrequencies::AttributeFrequencies(std::vector<string>& singlAttributes)
-{
-	for (string att : singlAttributes)
-	{
-
-		unordered_map<unsigned int, unsigned long int> x;
-		SingleAttributesFreq[att] = x;
-	}
-
-}
 
 std::vector<unsigned int> CSVReader::split(const std::string& s, char delimiter)
 {
@@ -355,115 +197,435 @@ std::vector<string> CSVReader::GetHeaders(std::vector<string>& singlAttributes, 
 	return headers;
 }
 
-AttributeFrequencies CSVReader::getData(std::vector<string>& singlAttributes, std::vector<std::pair<string, string>>& pairAttributes, vector<string>& First, vector<string>& Second)
+void CSVReader::findRawData_withBuffer(std::vector<string>& singlAttributes, std::vector<std::pair<string, string>>& pairAttributes, vector<string>& First, vector<string>& Second, int size)
+{
+//    std::vector<std::vector<unsigned int>> data;
+    data.resize(size);
+    std::ifstream file(fileName);
+    if (!file.good())
+    {
+        cout<<"file not found."<<fileName<<endl;
+     // If file is not there
+     exit(1);
+    }
+    std::string line = "";
+
+    // Iterate through each line and split the content using delimeter
+    string tmpS;int tmpI;
+    headers = GetHeaders(singlAttributes, pairAttributes, First, Second);
+    getline(file, line);
+    headerIndexes = GetHeadersIndexes(line, '|', headers); 
+    // sort pair wise header and indices to scan faster
+    for (int h = 0; h < headerIndexes.size()-1;h++)       
+        for (int j = 0; j < headerIndexes.size()-h-1; j++)  
+            if (headerIndexes[j] > headerIndexes[j+1])  
+            {
+                tmpS=headers[j];
+                headers[j]=headers[j+1];
+                headers[j+1]=tmpS;
+                tmpI=headerIndexes[j];
+                headerIndexes[j]=headerIndexes[j+1];
+                headerIndexes[j+1]=tmpI;
+            }
+
+    std::vector<string> row;
+    row.resize(headers.size());
+    vector<unsigned int> casted;
+    casted.resize(row.size());
+    int rowNum=0;
+    while (getline(file, line))
+    {
+        
+            int headerCnt = 0;
+            int lineCnt=0;
+
+            std::string::const_iterator start = line.begin();
+            std::string::const_iterator end = line.end();
+            std::string::const_iterator next = std::find(start, end, '|');
+
+            while (next != end) {
+                if(lineCnt==headerIndexes[headerCnt])
+                {
+                    row[headerCnt++] = std::string(start, next);
+                }
+                start = next + 1;
+                next = std::find(start, end, '|');
+                lineCnt++;
+            }
+
+            for (int i = 0; i < row.size(); i++) 
+                 casted[i] = stoi(row[i]); 
+            data[rowNum++]=casted;
+    }
+
+    file.close();
+}
+void CSVReader::findRawData(std::vector<string>& singlAttributes, std::vector<std::pair<string, string>>& pairAttributes, vector<string>& First, vector<string>& Second)
+{
+    std::ifstream file(fileName);
+    if (!file.good())
+    {
+        cout<<"file not found."<<fileName<<endl;
+     // If file is not there
+     exit(1);
+    }
+    std::string line = "";
+
+    // Iterate through each line and split the content using delimeter
+    string tmpS;int tmpI;
+    headers = GetHeaders(singlAttributes, pairAttributes, First, Second);
+    getline(file, line);
+    headerIndexes = GetHeadersIndexes(line, '|', headers); 
+    // sort pair wise header and indices to scan faster
+    for (int h = 0; h < headerIndexes.size()-1;h++)       
+        for (int j = 0; j < headerIndexes.size()-h-1; j++)  
+            if (headerIndexes[j] > headerIndexes[j+1])  
+            {
+                tmpS=headers[j];
+                headers[j]=headers[j+1];
+                headers[j+1]=tmpS;
+                tmpI=headerIndexes[j];
+                headerIndexes[j]=headerIndexes[j+1];
+                headerIndexes[j+1]=tmpI;
+            }
+
+    std::vector<string> row;
+    row.resize(headers.size());
+    vector<unsigned int> casted;
+    casted.resize(row.size());
+    int lastInx=headerIndexes[headerIndexes.size()-1];
+    while (getline(file, line))
+    {
+        
+            int headerCnt = 0;
+            int lineCnt=0;
+
+            std::string::const_iterator start = line.begin();
+            std::string::const_iterator end = line.end();
+            std::string::const_iterator next = std::find(start, end, '|');
+
+            while (next != end) {
+                if(lineCnt==headerIndexes[headerCnt])
+                    row[headerCnt++] = std::string(start, next);
+                
+                if(lastInx==lineCnt)
+                        break;
+                start = next + 1;
+                next = std::find(start, end, '|');
+                lineCnt++;
+            }
+
+            if (lineCnt==headerIndexes[headerCnt])//last attribute
+                row[headerCnt++] = std::string(start, next);
+
+            for (int i = 0; i < row.size(); i++) 
+                 casted[i] = stoi(row[i]); 
+            data.push_back(casted);
+    }
+
+    file.close();
+}
+void CSVReader::calSingleFreq(string att,unordered_map<unsigned int,unsigned long int> &pot)
+{
+    
+    std::pair<bool, unsigned int> attInx = findInVector<string>(headers, att);
+    if (attInx.first)
+    {
+        unsigned int key;
+        for (auto &row : data)
+        {   
+                key = row[attInx.second];
+                pot[key] = pot[key] + 1;
+        }
+    }
+    else
+    {
+        cout<<"the attribute "<<att<<"does not exist!"<<endl;
+        exit(1);
+    }
+
+}
+void CSVReader::calPairFreq(pair<string,string> atts,unordered_map<unsigned int, unordered_map<unsigned int, unsigned long int>> &pot)
+{
+    std::pair<bool, unsigned int> p1 = findInVector<string>(headers, atts.first);
+    std::pair<bool, unsigned int> p2 = findInVector<string>(headers, atts.second);
+    unsigned int x_val, y_val;
+    if (p1.first && p2.first)
+    {
+        for (auto & row : data)
+        {       
+            x_val = row[p1.second];
+            y_val = row[p2.second];
+            pot[x_val][y_val] = pot[x_val][y_val] + 1;
+        }
+    }
+    else
+    {
+        cout<<"Check attributes "<<atts.first <<" and "<<atts.second << endl;
+        exit(1);
+    }
+}
+void CSVReader::calNon_Sk_Freq2(vector<string>& First, vector<string>& Second, unordered_map_sequence<std::vector<unsigned int>, vector<vector<unsigned int>> > & vec_Key,unordered_map<unsigned int, vector<vector<unsigned int>>> &single_key)
 {
 
-	auto start_total = high_resolution_clock::now();
-	vector<string> concat;
-	concat.reserve(First.size() + Second.size()); // preallocate memory
-	concat.insert(concat.end(), First.begin(), First.end());
-	concat.insert(concat.end(), Second.begin(), Second.end());
-
-	AttributeFrequencies F(singlAttributes);
-
-	std::ifstream file(fileName);
-  
-          if (!file.good())
-          {
-              cout<<"file not found."<<fileName<<endl;
-           // If file is not there
-           exit(1);
-          }
-	std::string line = "";
-
-	// Iterate through each line and split the content using delimeter
-	auto start = high_resolution_clock::now();
-
-
-	headers = GetHeaders(singlAttributes, pairAttributes, First, Second);
-	getline(file, line);
-	headerIndexes = GetHeadersIndexes(line, '|', headers);
-
-	std::vector<std::vector<unsigned int>> data;
-
-	std::vector<string> results;
-	results.resize(headers.size());
-	vector<unsigned int> casted;
-	casted.resize(results.size());
-	while (getline(file, line))
-	{
-
-		int cnt = 0;
-
-		std::string::const_iterator start = line.begin();
-		std::string::const_iterator end = line.end();
-		std::string::const_iterator next = std::find(start, end, '|');
-
-		while (next != end) {
-
-			std::pair<bool, unsigned int> r = findInVector<int>(headerIndexes, cnt);
-			if (r.first)
-			{
-				results[r.second] = std::string(start, next);
-			}
-			start = next + 1;
-			next = std::find(start, end, '|');
-			cnt += 1;
-		}
-		std::pair<bool, unsigned int> r = findInVector<int>(headerIndexes, cnt);
-		if (r.first)
-		{
-			results[r.second] = std::string(start, next);
-		}
-
-		
-                for (int i = 0; i < results.size(); i++) { casted[i] = stoi(results[i]); }
-		data.push_back(casted);
-                
-                
-	}
-
-	file.close();
-	auto end = high_resolution_clock::now();
-	auto duration = duration_cast<seconds>(end - start);
-	//	std::cout << "\n";
-	//	std::cout << duration.count();
-	//	std::cout << "\n";
-
-	F.timings["loading"] = duration.count();
-
-	auto start1 = high_resolution_clock::now();
-	for (std::vector<unsigned int> row : data)
-        {
-            if (Second.size() > 0)
-                FindGroupAttributes(concat, F.GroupAttributesFreq, headers, row);
-            if (singlAttributes.size()>0)
-                FindSingleAttributes(singlAttributes, F.SingleAttributesFreq, headers, row);
-            if(pairAttributes.size()>0)
-                FindPairAttributes(pairAttributes, F.ConditionalFreq, headers, row);
-//            if(pulledOut.size()>0)
-//                FindGroupAttributes(pulledOut, F.pulledOutEdgeFreq, headers, row);
+    unordered_map_sequence<vector<unsigned int>, unordered_map_sequence<vector<unsigned int>, unsigned int>  >  vec_vec;
+    unordered_map<unsigned int, unordered_map_sequence<vector<unsigned int>, unsigned int> > sing_vec;
+    unordered_map_sequence<vector<unsigned int>, unordered_map<unsigned int, unsigned int>  >  vec_sing;
+    unordered_map<unsigned int, unordered_map<unsigned int, unsigned int> > sing_sing;
+ 
+    vector<unsigned int> firstInx;
+    vector<unsigned int> secondInx;
+    for (string att : First) 
+    {
+        std::pair<bool, unsigned int> attInxx = findInVector<string>(headers, att);
+        if(attInxx.first)
+            firstInx.push_back(attInxx.second);
+    }
+    for (string att : Second) 
+    {
+        std::pair<bool, unsigned int> attInxx = findInVector<string>(headers, att);
+        if(attInxx.first)
+            secondInx.push_back(attInxx.second);
+    }
+    
+    unsigned int key;
+    unsigned int value;
+    if (First.size() == 1 && Second.size()==1) // insert to sing_sing
+    {
+        for (auto &row : data)
+        {       
+            key=row[firstInx[0]];
+            value=row[secondInx[0]];
+            sing_sing[key][value]=sing_sing[key][value]+1;
+        }
+    }
+    else if (First.size() > 1 && Second.size()==1)
+    {
+        unsigned int value;
+        for (auto &row : data)
+        {       
+            vector<unsigned int> key;
+            value=row[secondInx[0]];
+            for (auto attID : firstInx) 
+                key.push_back(row[attID]);
+            
+            vec_sing[key][value]=vec_sing[key][value]+1;
+        }
+    }
+    else if (First.size() == 1 && Second.size()>1)
+    {
+        unsigned int key;
+        for (auto &row : data)
+        {       
+            vector<unsigned int> value;
+            key=row[firstInx[0]];
+            for (auto attID : secondInx) 
+                value.push_back(row[attID]);
+            
+            sing_vec[key][value]=sing_vec[key][value]+1;
+        }
+    }
+    else if (First.size() > 1 && Second.size()>1)
+    {
         
+        for (auto &row : data)
+        {       
+            vector<unsigned int> key;
+            vector<unsigned int> value;
+            for (auto attID : secondInx) 
+                value.push_back(row[attID]);
+            for (auto attID : firstInx) 
+                key.push_back(row[attID]);
+            vec_vec[key][value]=vec_vec[key][value]+1;
+        }
+    }
+    //now make the final conditional non-skeleton potential functions  (vectorized and accumulated to ease the sampling)
+    // the second map should be converted to vector and make the accumulative distribution
+    if (First.size() == 1) 
+    {
+        if (sing_sing.size()>0)
+        {
+            unsigned int key;
+            
+            for (auto &key1: sing_sing)
+            {
+                key=key1.first;
+                vector< vector<unsigned int>> value(key1.second.size());
+                int i=0;
+                int sum=0;
+                for (auto &key2:key1.second)
+                {
+                    value[i].push_back( key2.first);
+                    sum+=key2.second;
+                    value[i++].push_back(sum);
+//                    cout<<i<<endl;
+                    
+                }
+                single_key[key]=value;
+            }
+        }
+        else if (sing_vec.size()>1)
+        {
+            unsigned int key;
+            
+            for (auto &key1: sing_vec)
+            {
+                
+                key=key1.first;
+                vector< vector<unsigned int>> value(key1.second.size());
+                int i=0;
+                int sum=0;
+                for (auto &key2:key1.second)
+                {
+                    for (auto &vvv:key2.first)
+                        value[i].push_back(vvv);
+                    sum+=key2.second;
+                    value[i++].push_back(sum);
+//                    cout<<i<<endl;
+                    
+                }
+                single_key[key]=value;
+            }
         }
         
-	auto end1 = high_resolution_clock::now();
-	auto duration1 = duration_cast<seconds>(end1 - start1);
-	//	std::cout << "\n";
-	//	std::cout << duration1.count();
-	//	std::cout << "\n";
-	F.timings["frequency_calculation"] = duration1.count();
+    }
+    else if (First.size() > 1)
+    {
+       if (vec_sing.size()>0)
+        {
 
-	if (Second.size() > 0)
-	{
+            for (auto &key1: vec_sing)
+            {
+                vector<unsigned int> key=key1.first;
+                vector< vector<unsigned int>> value(key1.second.size());
+                int i=0;
+                int sum=0;
+                for (auto &key2:key1.second)
+                {
+                    value[i].push_back( key2.first);
+                    sum+=key2.second;
+                    value[i++].push_back(sum);
+//                    cout<<i<<endl;
+                    
+                }
+                vec_Key[key]=value;
+            }
+        }
+       else if (vec_vec.size()>1)
+        {
+            for (auto &key1: vec_vec)
+            {
+                vector<unsigned int> key=key1.first;
+                vector< vector<unsigned int>> value(key1.second.size());
+                int i=0;
+                int sum=0;
+                for (auto &key2:key1.second)
+                {
+                    for (auto &vvv:key2.first)
+                        value[i].push_back(vvv);
+                   
+                    sum+=key2.second;
+                    value[i++].push_back(sum);
+//                    cout<<i<<endl;
+                    
+                }
+                vec_Key[key]=value;
+            }
+        }
+    }
 
-		TransferGroupAtt(First, Second, F.GroupAttributesFreq, F.GroupAttributesFreq2, F.GroupAttributesFreq1);
-	}
-        F.dataSize=data.size();
+}
+void CSVReader::calNon_Sk_Freq(vector<string>& First, vector<string>& Second, unordered_map_sequence<std::vector<unsigned int>, vector<vector<unsigned int>> > & vec_Key,unordered_map<unsigned int, vector<vector<unsigned int>>> &single_key)
+{
+    vector<string> concated;
+    concated.insert(concated.end(), First.begin(), First.end());
+    concated.insert(concated.end(), Second.begin(), Second.end());
+    unordered_map_sequence<vector<unsigned int>, unsigned int> GroupFreq; //to keep the freqs of all attributes together
+    vector<unsigned int> attInx;
+    for (string att : concated) 
+    {
+        std::pair<bool, unsigned int> attInxx = findInVector<string>(headers, att);
+        if(attInxx.first)
+            attInx.push_back(attInxx.second);
+    }
+    
+    
+    for (auto &row : data)
+    {       
+        vector<unsigned int> key_vector;
+        for (unsigned int attID : attInx) 
+            key_vector.push_back(row[attID]);
+
+        GroupFreq[key_vector] = GroupFreq[key_vector] + 1;
+
+    }
+    
+    //now make the conditional non-skeleton potential functions (Accumulated)
+
+//    vector<unsigned int> all;
+//    vector<unsigned int> value;
+    
+    if (First.size() == 1) 
+    {
+        for (const auto& pair : GroupFreq)
+        {
+           
+            int new_key = pair.first[0];
+            vector<unsigned int> value;
+            
+            for (int i = 0; i < Second.size(); i++) 
+                value.push_back(pair.first[i + 1]); 
+            
+            value.push_back(pair.second);
+            single_key[new_key].push_back(value);
+        }
+    }
+    else if (First.size() > 1)
+    {
+        vector<unsigned int> newKey;
+        newKey.resize(First.size());
+        vector<unsigned int> value;
+        value.resize(Second.size()+1);
+        for (const auto& pair : GroupFreq)
+        {
+//            all = pair.first;
+//            
+            for (int i = 0; i < First.size(); i++) 
+                newKey[i]=(pair.first[i]);
         
-	F.GroupAttributesFreq.clear();
-	auto end_total = high_resolution_clock::now();
-	auto total_time = duration_cast<seconds>(end_total - start_total);
-	F.timings["total"] = total_time.count();
-	return F;
-};
+            for (int i = 0; i < Second.size(); i++) 
+                value[i]=pair.first[i + First.size()]; 
+//
+            vec_Key[newKey].push_back(value);
+        }
+    }
+//    Make the frequencies of Y accumulative per distinct key X values
+    
+    if (First.size() == 1) 
+    {
+        int s_size=Second.size();
+        for (auto &pair1:single_key)
+        {
+            unsigned int  sum=0;
+            for (auto &pair2:pair1.second)
+            {
+                sum+= pair2[s_size];
+                pair2[s_size]=sum;
+            }
+        }
+    }
+    else if (First.size() > 1)
+    {
+        int s_size=Second.size();
+        for (auto &pair1:vec_Key)
+        {
+            unsigned int  sum=0;
+            for (auto &pair2:pair1.second)
+            {
+                sum+= pair2[s_size];
+                pair2[s_size]=sum;
+            }
+        }
+    }
+}
 #endif /* CSVREADER_H */

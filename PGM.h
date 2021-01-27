@@ -51,7 +51,7 @@ class PGM
     PGM (Query *q) 
     {
         query=*q;
-        cout<<"Query "<<query.name<<" is being processed."<<endl;
+        cout<<"                 Query "<<query.name<<" is being processed."<<endl;
     }
     vector<string> pulledOutAttsconditions; // for pulled out cyclic version
     unordered_map_sequence<vector<unsigned int>, unsigned long int> pulledOutRejectionRates;
@@ -163,7 +163,7 @@ void PGM::buildGraph (int alg1)
                         }
                         else if(alg==1)
                         {
-                            if(!((query.pulledoutEdge.first==attPredicates[i]&&query.pulledoutEdge.second==attPredicates[j])||(query.pulledoutEdge.first==attPredicates[j]&&query.pulledoutEdge.second==attPredicates[i]))) // if the is edge is not in pulled out edges
+                            if(!((query.pulledoutEdge.first==attPredicates[i]&&query.pulledoutEdge.second==attPredicates[j])||(query.pulledoutEdge.first==attPredicates[j]&&query.pulledoutEdge.second==attPredicates[i]))) // if the edge is not in pulled out edges
                                 skeleton.addedge(attPredicates[i],attPredicates[j]);
                                  
                         }
@@ -230,11 +230,13 @@ void PGM::buildGraph (int alg1)
                     {
                         pair<string,string> vec;
                         pair<string,string> vecAls;
-                        string att1, att2;
+                        string att1, att2; // to keep the original names of attributes
+                        
                         if(query.attAliases[table].find(attPredicates[i])!=query.attAliases[table].end()) // if the att has an alias
                             att1=query.attAliases[table][attPredicates[i]];
-                        else
+                        else //otherwise, use the same name
                             att1=attPredicates[i];
+                        
                         if(query.attAliases[table].find(attPredicates[j])!=query.attAliases[table].end())
                             att2=query.attAliases[table][attPredicates[j]];
                         else
@@ -357,6 +359,7 @@ void PGM::buildGraph (int alg1)
             auto non_skeleton_keys= singleAtts; // for reading from the csv
             auto non_skeleton_keysAls= singleAttsAls;// to store the freqs in the graph
             //if singleAtts is empty, the pairs exist
+            //take all Join attributes as key of this mapping to non-JAs
             for (int i=0;i<pairAtts.size();i++)
             {
                 vector<string> vec={pairAtts[i].first,pairAtts[i].second}; 
@@ -373,125 +376,120 @@ void PGM::buildGraph (int alg1)
                     attProjections.push_back(att);
             auto non_skeleton_key2=vec_substract(attProjections,non_skeleton_keys);
             
-            string data=query.tables[tableAliasRev[table]];
             
-            CSVReader reader(data);
-
-            auto dataList = reader.getData(singleAtts,pairAtts, non_skeleton_keys,non_skeleton_key2);
-            //Read the csv file for the currect table and calculate the single, pairs, and non-skeleton attributes and make the freq tables
-//            auto out = getvalues(tableAliasRev[table],singleAtts,pairAtts, non_skeleton_keys,non_skeleton_key2);
             
-            // we have at most a single attribute per table, if it exists then we do not have pair attributes in the table
-            //push it  into the skeleton
-            unordered_map<unsigned int,unsigned long int> tmpPot;
+            string tableAdd=query.tables[tableAliasRev[table]];
+            
+            CSVReader reader(tableAdd);
+            if(query.sizes.find(tableAliasRev[table])==query.sizes.end())
+                reader.findRawData(singleAtts,pairAtts, non_skeleton_keys,non_skeleton_key2);
+            else
+                reader.findRawData_withBuffer(singleAtts,pairAtts, non_skeleton_keys,non_skeleton_key2,query.sizes[tableAliasRev[table]]);
+            
+            //Read the csv file for the current table and calculate the single, pairs, and non-skeleton attributes and make the freq tables
+            cout<<"started to scan the table "<<table<<endl;
             for (unsigned int i=0;i<singleAttsAls.size();i++)
             {
-                string att=singleAttsAls[i];
-                auto &sing=dataList.SingleAttributesFreq[singleAtts[i]];
-//                auto &pot=skeleton.nodes[att].pot;
-                if(alg==0 || (alg==2 && query.pulledoutAtt.find(att)==query.pulledoutAtt.end()) || alg==1)
+                string attAls=singleAttsAls[i];
+                string att=singleAtts[i];
+                if(alg==0 || (alg==2 && query.pulledoutAtt.find(attAls)==query.pulledoutAtt.end()) || alg==1)
                 {
-                    if (skeleton.nodes[att].pot.size()>0) // means we had already some pots comming from other tables, and they should be multiplied with the old ones 
+                    if (skeleton.nodes[attAls].pot.size()>0) // means we had already some pots comming from other tables, and they should be multiplied with the old ones 
                     {
-                        for(auto &row: skeleton.nodes[att].pot)
-                        {
-                            if(sing.find(row.first)!=sing.end())
-                            {
-                                tmpPot[row.first]=row.second*sing[row.first];
-                            }
-                        }
-                        skeleton.nodes[att].pot=tmpPot;
-                        if(tmpPot.size()==0)
-                        {
-                            cout<<"The join result size is zero"<<endl;
-                            exit(1);
-                        }
+                        skeleton.nodes[attAls].tmpPot.push_back(unordered_map<unsigned int,unsigned long int>()); // If the pot is already accupied, other pots should be maintained somewhere else
+                        int ds=skeleton.nodes[attAls].tmpPot.size()-1;
+                        reader.calSingleFreq(att,skeleton.nodes[attAls].tmpPot[ds]);
                     }
                     else
-                       skeleton.nodes[att].pot=dataList.SingleAttributesFreq[singleAtts[i]];// copy by value, if pot is empty. means this is the first pot comming from other tables
+                        reader.calSingleFreq(att,skeleton.nodes[attAls].pot);
+                       //if pot is empty. means this is the first pot comming from other tables
                 }
-                else if(alg==2 && query.pulledoutAtt.find(att)!=query.pulledoutAtt.end())// it is a pulled out att
+                else if(alg==2 && query.pulledoutAtt.find(attAls)!=query.pulledoutAtt.end())// it is a pulled out att
                 {
-                    if (pulledOutSkeleton.nodes[att].pot.size()>0) // means we had already some pots comming from other tables, and they should be multiplied with the old ones 
+                    if (pulledOutSkeleton.nodes[attAls].pot.size()>0) // means we had already some pots comming from other tables, and they should be multiplied with the old ones 
                     {
-                        for(auto &row: pulledOutSkeleton.nodes[att].pot)
-                        {
-                            if(sing.find(row.first)!=sing.end())
-                            {
-                                tmpPot[row.first]=row.second*sing[row.first];
-                            }
-                        }
-                        pulledOutSkeleton.nodes[att].pot=tmpPot;
-                        if(tmpPot.size()==0)
-                        {
-                            cout<<"The join result size is zero"<<endl;
-                            exit(1);
-                        }
+                        pulledOutSkeleton.nodes[attAls].tmpPot.push_back(unordered_map<unsigned int,unsigned long int>()); // If the pot is already accupied, other pots should be maintained somewhere else
+                        int ds= pulledOutSkeleton.nodes[attAls].tmpPot.size()-1;
+                        reader.calSingleFreq(att,pulledOutSkeleton.nodes[attAls].tmpPot[ds]);
+                        
                     }
                     else
-                       pulledOutSkeleton.nodes[att].pot=dataList.SingleAttributesFreq[singleAtts[i]];
+                        reader.calSingleFreq(att,pulledOutSkeleton.nodes[attAls].pot);
+                     
                 }
             }
+            // per pair attributes in the same table
             for (unsigned int i=0;i<pairAttsAls.size();i++)
             {
-                pair<string,string> atts=pairAttsAls[i];
-                if(alg==2 && (query.pulledoutAtt.find(atts.first)!=query.pulledoutAtt.end() || query.pulledoutAtt.find(atts.second)!=query.pulledoutAtt.end()))
+                pair<string,string> atts=pairAtts[i];
+                pair<string,string> attsAls=pairAttsAls[i];
+                if(alg==2 && (query.pulledoutAtt.find(attsAls.first)!=query.pulledoutAtt.end() || query.pulledoutAtt.find(attsAls.second)!=query.pulledoutAtt.end()))
                 {
-                    auto e=pulledOutSkeleton.getedge(atts.first,atts.second);
-                    e->pot=dataList.ConditionalFreq[i]; // copy by value.
+                    auto e=pulledOutSkeleton.getedge(attsAls.first,attsAls.second);
+                    reader.calPairFreq(atts,e->pot );
                 }
-                else if(alg==1 && (query.pulledoutEdge.first==atts.first && query.pulledoutEdge.second==atts.second || query.pulledoutEdge.first==atts.second && query.pulledoutEdge.second==atts.first ))
+                else if(alg==1 && (query.pulledoutEdge.first==attsAls.first && query.pulledoutEdge.second==attsAls.second || query.pulledoutEdge.first==attsAls.second && query.pulledoutEdge.second==attsAls.first ))
                 {
                     //if alg==1 and the edge is the pulled out edge
-                    pulledOutConditionalRejectionRate=dataList.ConditionalFreq[i];
+                    reader.calPairFreq(atts,pulledOutConditionalRejectionRate);
                 }
                 else
                 {
-                    auto e=skeleton.getedge(atts.first,atts.second);
-                    e->pot=dataList.ConditionalFreq[i]; // copy by value.
+                    auto e=skeleton.getedge(attsAls.first,attsAls.second);
+                    reader.calPairFreq(atts,e->pot );
                 }
             }
 
             //just one model needed to get non-skeleton attributes given skeleton attribute
             for (auto &att: non_skeleton_key2Als)
                 att=table+"_"+att;
-            if(non_skeleton_key2.size()>0)// if any non skeleton variables exist 
+            if(non_skeleton_key2Als.size()>0)
             {
-                non_skeleton_node nn;
-                nn.key1=non_skeleton_keysAls;
-                nn.key2=non_skeleton_key2Als;
-                if (non_skeleton_keys.size()>1)
-                {
-                    nn.vec_key=dataList.GroupAttributesFreq2; // a map with a vector as a key
-                }
-                else
-                {
-                    nn.single_key=dataList.GroupAttributesFreq1; // single key map
-                }
-                skeleton.non_skeleton_nodes[table]=nn;
+                skeleton.non_skeleton_nodes[table];
+                skeleton.non_skeleton_nodes[table].key1=non_skeleton_keysAls;
+                skeleton.non_skeleton_nodes[table].key2=non_skeleton_key2Als;
+                reader.calNon_Sk_Freq(non_skeleton_keys,non_skeleton_key2,skeleton.non_skeleton_nodes[table].vec_key,skeleton.non_skeleton_nodes[table].single_key) ;   
             }
-            
-            cout<<"Time for reading and cal freqs of table "<<tableAliasRev[table]<<": "<<dataList.timings["total"]<<endl;
+            cout<<"Done with the table "<<table<<endl;
         }
     }
-    
-    
-    
     timing_seconds.readAndMakeFreqs=float( clock () - begin_time2 ) /  CLOCKS_PER_SEC;
 }
 
 void PGM::inferDP () 
 {
+     const clock_t begin_time = clock(); 
     cout<<"\n"<<"started the inference"<<endl;
+    cout<<"---------------------------------------------------------------------"<<endl;
+    
+    //First of all, do product of different pots coming from different tables. After this we will have just one pot per node.
+    for (auto &node:skeleton.nodes)
+    {
+        if (node.second.tmpPot.size()>0) // means we had already some pots comming from other tables, and they should be multiplied with the old ones 
+        {
+            for (int i=0;i<node.second.tmpPot.size();i++)
+            {
+                multiplyMaps( skeleton.nodes[node.first].pot , skeleton.nodes[node.first].tmpPot[i],skeleton.nodes[node.first].pot);
+                if(skeleton.nodes[node.first].pot.size()==0)
+                {
+                    cout<<"The join-result size is zero"<<endl;
+                    exit(1);
+                }
+            }
+
+        }
+        
+    }
+
     /*
      * 
      * 
-     * 
+     *****  Notice: optimize later*********
      *  the order of (if-for) statements can be changed to optimize the code
      
      
      */
-    const clock_t begin_time = clock(); 
+   
     vector <string> alreadyEliminated; // to keep the nodes that have been eliminated so far
     unordered_map<unsigned int, string> revEliminationOrder;//reverse map of the elimination order. It is not the reverse order :)
     for (auto const pair: skeleton.eliminationOrder)
@@ -799,7 +797,7 @@ void PGM::inferDP ()
     }
     lastNode=alreadyEliminated[alreadyEliminated.size()-1];
     
-    cout <<"\n"<<"Time until the skeleton Inference without considering pulledout: "<<float( clock () - begin_time ) /  CLOCKS_PER_SEC <<"  (Accumulative time)"<<endl;
+    cout <<"\n"<<"Time until the skeleton Inference (without considering pulledout): "<<float( clock () - begin_time ) /  CLOCKS_PER_SEC <<"  (Accumulative time)"<<endl;
     
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////pulled out part
     
@@ -1103,7 +1101,7 @@ void PGM::multiplyMaps (unordered_map<unsigned int,unsigned long int> &m1, unord
     
     if(m1.size()<m2.size())
         
-        for (auto pair = m1.cbegin(); pair != m1.cend() /* not hoisted */; /* no increment */)
+        for (auto pair = m1.cbegin(); pair != m1.cend();)
         {
             x=pair->second * m2[pair->first];
             
@@ -1115,7 +1113,7 @@ void PGM::multiplyMaps (unordered_map<unsigned int,unsigned long int> &m1, unord
     
     else
         
-        for (auto pair = m2.cbegin(); pair != m2.cend() /* not hoisted */; /* no increment */)
+        for (auto pair = m2.cbegin(); pair != m2.cend(); )
         {
             x=m1[pair->first]*pair->second;
             

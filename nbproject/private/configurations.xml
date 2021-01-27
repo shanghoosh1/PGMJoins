@@ -13,6 +13,8 @@
         <gdb_interceptlist>
           <gdbinterceptoptions gdb_all="false" gdb_unhandled="true" gdb_unexpected="true"/>
         </gdb_interceptlist>
+        <gdb_signals>
+        </gdb_signals>
         <gdb_options>
           <DebugOptions>
           </DebugOptions>
@@ -66,8 +68,10 @@
           <runcommandpicklistitem>"${OUTPUT_PATH}" --input dfd  --output  dsf algorithm gdffd sample 10000</runcommandpicklistitem>
           <runcommandpicklistitem>"${OUTPUT_PATH}" --algorithm 1 --query qsss</runcommandpicklistitem>
           <runcommandpicklistitem>"${OUTPUT_PATH}"</runcommandpicklistitem>
+          <runcommandpicklistitem>"${OUTPUT_PATH}" --sample 1000</runcommandpicklistitem>
+          <runcommandpicklistitem>"${OUTPUT_PATH}" -sample 1000</runcommandpicklistitem>
         </runcommandpicklist>
-        <runcommand>"${OUTPUT_PATH}"</runcommand>
+        <runcommand>"${OUTPUT_PATH}" -sample 1000</runcommand>
         <rundir></rundir>
         <buildfirst>true</buildfirst>
         <terminal-type>0</terminal-type>
