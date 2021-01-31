@@ -1,5 +1,7 @@
 # PGMjoins
-Joins big tables in relational databases efficiently
+Joins big tables in relational databases efficiently   
+
+The code has been tested on Ubuntu 18.10
 
 # To compile:
 First cd into the folder "PGMjoins-master" then run “make -f Makefile CONF=Release”

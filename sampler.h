@@ -15,7 +15,7 @@
 #define SAMPLER_H
 
 // C++ implementation of the approach 
-#include <bits/stdc++.h> 
+//#include <bits/stdc++.h> 
 #include <random>
 #include <chrono>
 #include <stdlib.h>

@@ -38,12 +38,12 @@ bool cmdOptionExists(char** begin, char** end, const std::string& option)
     return std::find(begin, end, option) != end;
 }
 int main(int argc, char** argv) {
-    string fileAdd="/media/2TB/data/Twitter/small/";
-//    string fileAdd="/media/2TB/data/TPCH/tpch1x/";
-//    string fileAdd="/media/2TB/data/exactJoin/tpch/small/";
-//    string fileAdd="/media/2TB/data/exactJoin/JOB/20Percent/";
-//    string fileAdd="/media/2TB/data/JOB/mainData/allTests/SF5/";
-    string outAdd="/home/NetBeansProjects/joinPGM/samples/Q3/1x/";
+    string fileAdd="/media/u1880698/2TB/data/Twitter/small/";
+//    string fileAdd="/media/u1880698/2TB/data/TPCH/tpch1x/";
+//    string fileAdd="/media/u1880698/2TB/data/exactJoin/tpch/small/";
+//    string fileAdd="/media/u1880698/2TB/data/exactJoin/JOB/20Percent/";
+//    string fileAdd="/media/u1880698/2TB/data/JOB/mainData/allTests/SF5/";
+    string outAdd="/home/u1880698/NetBeansProjects/joinPGM/samples/Q3/1x/";
     if(cmdOptionExists(argv, argv+argc, "--help"))
     {
         cout<<"-input \t\t the address for the tables: Note, the tables should be in .csv format separating the attributes by '|' and should include the headers \n"<<endl;
@@ -417,7 +417,7 @@ int main(int argc, char** argv) {
         alg = atoi(getCmdOption(argv, argv + argc, "-algorithm"));
     
 
-    PGM pgm(&q);
+    PGM pgm(&qttt);
     cout<<"====================================================================="<<"\n"<<endl;
     cout<<"Algorithm "<<alg<<" was selected."<<endl;
     
